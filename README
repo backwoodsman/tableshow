@@ -1,0 +1,31 @@
+This plugin tag by richard <richard@the-place.net>.  It is intended to
+extract and display a table presented in a simple wiki-like markup in either 
+a page or a global block.  Each line is interpreted as a table row and can  
+have an optional '<br />' at the end to allow easy viewing for admin 
+purposes. Additionally, lines can be selected for display based on the 
+values in particular cells.  This allows, for example, the discarding of 
+already passed dates. 
+
+USAGE: {tableshow block="{bn}"|page="{pn}" [start="{s-crit}"] [end="{e-crit}"]}
+
+where
+  {bn} or {pn} is global content block name, or page alias where the 
+                   table data are given. Defaults to page alias = showtable.
+                   It is recommended to enclose the data in <pre></pre> tags
+                   to allow viewing.  These tags are automatically stripped.
+
+  {s-crit} is the criterion for the starting row of the table given as
+                   a column number (first column is '1') and
+                   optional comparison eg: "3 > 1945". s-crit cell number
+                   with no comparison defaults to >= today's date.
+
+  {e-crit} is the criterion for the end row, similarly.
+
+I have not implemented paging because inserting <thead> and <tfoot> 
+segments should result in the browser dealing with paging.  These can be 
+inserted directly into the source page or the three segments divided by
+lines beginning with three or more hyphens ('---').  The segments must be 
+in the order thead, tfoot, tbody.
+
+Formatting of the table is controlled by css.
+
