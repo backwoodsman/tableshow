@@ -1,21 +1,21 @@
 <?php
-#CMS - CMS Made Simple
-#(c)2004 by Ted Kulp (wishy@users.sf.net)
-#This project's homepage is: http://cmsmadesimple.sf.net
+# CMS - CMS Made Simple
+# (c)2004 by Ted Kulp (wishy@users.sf.net)
+# This project's homepage is: http://cmsmadesimple.sf.net
 #
-#This program is free software; you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation; either version 2 of the License, or
-#(at your option) any later version.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-#This program is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
-#You should have received a copy of the GNU General Public License
-#along with this program; if not, write to the Free Software
-#Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+# ======================================================================
 # This plugin tag by richard <richard@the-place.net>.  It is intended to
 # extract and display a table presented in a simple wiki-like markup in either 
 # a page or a global block.  Each line is interpreted as a table row and can  
@@ -46,7 +46,7 @@
 # in the order thead, tfoot, tbody.
 #
 # Formatting of the table is controlled by css.
-#
+# ======================================================================
 
 function smarty_cms_function_tableshow($params, &$smarty) {
     global $gCms;
@@ -57,8 +57,8 @@ function smarty_cms_function_tableshow($params, &$smarty) {
 	$celltyprgx = "/[|^]/";
 	$critrgx = "/^(\d+)([=<>&+-])(.*)$/";
 	$dataerror = "<div class=\"tblcontnr\"><b>input data error</b></div>\n";
-	$top = "<div class=\"tblcontnr\">\n\t<table class=\"tblshow\">\n";
-	$tail = "\t</table>\n</div>";
+	$top = "<!-- Start TableShow -->\n<div class=\"tblcontnr\">\n\t<table class=\"tblshow\">\n";
+	$tail = "\t</table>\n</div>\n<!-- End TableShow -->\n";
 	# we use UTC to avoid summertime errors. 
 	date_default_timezone_set('UTC');
 	$nowdate = date('d-m-Y');
@@ -80,16 +80,23 @@ function smarty_cms_function_tableshow($params, &$smarty) {
 		$content = $cntops->LoadContentFromAlias("$sourcepage");
 		$tabledata = $content->Show();
 	}
-
 	# confirm input data exists
 	if (strlen($tabledata) < 10) {
 		return $dataerror;
 	}
+
+	# set up date reformatting if required
+	if (isset($params['dateformat'])) {
+		$datfmt = explode('|', $params['dateformat']);
+	} else {
+		$datfmt[0] = "0";
+	}
+
 	# form an array of the data
 	$table = explode("\n", $tabledata);
 	$rowcount = count($table);
 	# top and tail
-	$text = $top;
+	$text .= $top;
 	$table = preg_replace( "/^ *<\/?pre> *$/", "", $table) ;
 
 	# break into segments (thead, tfoot, tbody)
@@ -115,13 +122,13 @@ function smarty_cms_function_tableshow($params, &$smarty) {
 	if (isset($thead)) {
 		$text .= "\t\t<thead>\n";
 		$thead = preg_replace( "/^\s*\_([^_]+)\_\s*$/", '<caption>\1</caption>', $thead ); 
-		$text .= parse_segment($thead, 0, 0, -1);
+		$text .= parse_segment($thead, 0, 0, -1, $datfmt);
 		$text .= "\n\t\t</thead>\n";
 	}
 	# parse tfoot
 	if (isset($tfoot)) {
 		$text .= "\t\t<tfoot>\n";
-		$text .= parse_segment($tfoot, 0, 0, -1);
+		$text .= parse_segment($tfoot, 0, 0, -1, $datfmt);
 		$text .= "\n\t\t</tfoot>\n";
 	}
 
@@ -176,7 +183,7 @@ function smarty_cms_function_tableshow($params, &$smarty) {
 		$span = count(preg_split("$celltyprgx", $table[0]));
 		$text .= "<tr><td span=\"$span\" align=\"centre\" class=\"warning\">no data in range<br />no start row found</td></tr>";
 	} else {
-		$text .= parse_segment($tbody, $first, $last, $lastsubhd);
+		$text .= parse_segment($tbody, $first, $last, $lastsubhd, $datfmt);
 	}
 	$text .= "\n\t\t</tbody>\n";
 	
@@ -187,18 +194,18 @@ function smarty_cms_function_tableshow($params, &$smarty) {
 
 }
 
-function parse_segment($table, $first, $last, $lastsubhd) {
+function parse_segment($table, $first, $last, $lastsubhd, $datfmt) {
 	$text = "";
 	if ($last == 0) {
 		$last = count($table);
 	}
 	if ($lastsubhd > -1 ) {
-		$text .= parse_row($table[$lastsubhd]);
+		$text .= parse_row($table[$lastsubhd], $datfmt);
 	}
 	for ($r = $first; $r <= $last; $r++) {
 		$row = $table[$r];
 		if (preg_match("/[|^]/", substr($row,0,1))) {
-		$text .= parse_row($row);
+		$text .= parse_row($row, $datfmt);
 		} else {
 			$text .= $row ;
 		}
@@ -206,9 +213,12 @@ function parse_segment($table, $first, $last, $lastsubhd) {
 	return $text;
 }
 
-function parse_row ($row) {
-	$text .= "\t\t\t<tr>\n";
-		while (strlen($row) > 1 ) {
+function parse_row ($row, $datfmt) {
+	$text = "\n\t\t<tr>\n";
+	$colno = 1;
+	$span = 0;
+	while (strlen($row) > 1 ) {
+		$colno = $colno + $span;
 			if (preg_match("/^([|^])([^|^]+)([|^]*)/", $row, $cell)){
 				$type = substr($row, 0, 1);
 				$span = strlen($cell[3]);
@@ -217,11 +227,25 @@ function parse_row ($row) {
 					$content = substr($content,1);
 				}
 				$shorten = strlen($cell[2]) + $span ;
+				if ($datfmt[0] != "0") {
+					preg_match("/^(\s*)([^ ]+)( *)$/", $content, $parts);
+					$aaa = $parts[1];
+					$zzz = $parts[3];
+					for ($i=1; $i<count($datfmt); $i++) {
+						if (($colno == $datfmt[$i]) && (strtotime($parts[2]) > 0)) {
+							$adate = strtotime($parts[2]);
+							/* NB: The above will parse dates with slash sparators as
+							wierd US-style m/d/Y.  Not correcting this to help US users.*/ 
+							$content = $aaa.date($datfmt[0], $adate).$zzz;
+							break;
+						}
+					}
+				}
 				$text .= write_cell($type, $span, $content);
 				$row = substr($row, $shorten);
 			}
 		}
-		$text .= "\n\t\t\t</tr>\n";
+		$text .= "\n\t\t</tr>";
 	return $text;
 }
 
@@ -237,7 +261,7 @@ function check_match($a_cell, $a_comp, $a_val) {
 		case '+':
 			$a_cell = preg_replace("/\//", '-', $a_cell);
 			$a_val = preg_replace("/\//", '-', $a_val);
-			return (strtotime($a_cell) > strtotime($a_val));
+			return (strtotime($a_cell) >= strtotime($a_val));
 		case '-':
 			$a_cell = preg_replace("/\//", '-', $a_cell);
 			$a_val = preg_replace("/\//", '-', $a_val);
