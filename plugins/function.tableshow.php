@@ -20,11 +20,15 @@
 # extract and display a table presented in a simple wiki-like markup in either 
 # a page or a global block.  Each line is interpreted as a table row and can  
 # have an optional '<br />' at the end to allow easy viewing for admin 
-# purposes. Additionally, lines can be selected for display based on the 
-# values in particular cells.  This allows, for example, the discarding of 
-# already passed dates. 
+# purposes. It is recommended instead to enclose the whole block of text in
+# <pre> </pre> tags.  These are stripped for display. 
+#
+# Additionally, lines can be selected for display based on the values in 
+# particular cells.  This allows, for example, the discarding of already passed 
+# dates.  If the first line to be displayed falls somewhere between two lines
+# marked as subheadings, the relevant previous subheading is also displayed.
 
-# USAGE: {tableshow block="{bn}"|page="{pn}" [start="{s-crit}"] [end="{e-crit}"]}
+# USAGE: {tableshow block="{bn}"|page="{pn}" [start="{s-crit}"] [end="{e-crit}"] [dateformat="{df}"]}
 # 
 # where
 #   {bn} or {pn} is global content block name, or page alias where the 
@@ -39,11 +43,21 @@
 #
 #   {e-crit} is the criterion for the end row, similarly.
 #
+#   {df} contains a date format followed by one or more column numbers, separated
+#   by pipe characters ("|"), for example "d M Y|2|3" will format dates in columns
+#   2 and 3 to be similar to '12 May 2011'.
+
+# A <caption> may be included -- this is the html tag that produces a headline 
+# above the table -- by placing it in the <thead> segment and marking it with
+# an underscore character at the start and end.
+#
 # I have not implemented paging because inserting <thead> and <tfoot> 
 # segments should result in the browser dealing with paging.  These can be 
 # inserted directly into the source page or the three segments divided by
 # lines beginning with three or more hyphens ('---').  The segments must be 
-# in the order thead, tfoot, tbody.
+# in the order thead, tbody, tfoot. If only one line containing '---' is present
+# then the two parts will be interpreted as thead and tbody and if none are
+# present then it is all placed in tbody.
 #
 # Formatting of the table is controlled by css.
 # ======================================================================
@@ -312,8 +326,10 @@ function smarty_cms_about_function_tableshow()
 {
 ?>
   <p>Author:  richard Lyons &lt;richard@the-place.net&gt; </p>
-  <p>Version 0.1</p>
+  <p>Version 0.2</p>
   <p>Change History<br />
+    0.2 - various bugfixes and revised to accept source segments in natural<br />
+    order, viz: thead, tbody, tfoot. <br />
     0.1.1 - beta release<br />
     0.1 - test version<br />
   </p>

@@ -15,8 +15,8 @@ than a word processor). Each line will be interpreted as a table row or other co
 </p>
 <ul>
   <li>If there is a line containing only three or more hyphens (&quot;---&quot;), the section 
-above will become the &lt;tablehead&gt;.  If a second such dividing line is found the intermediate 
-part will be the &lt;tablefoot&gt;. </li>
+above will become the &lt;thead&gt;.  If a second such dividing line is found the intermediate 
+part will be the &lt;tbody&gt;, and lines following it will become &lt;tfoot&gt;. </li>
   <li>If the first line is enclosed in underscore characters, it will become the &lt;caption&gt;</li>
   <li>Generally cells should be divided by pipes (&quot;|&quot;) or carets (&quot;^&quot;).  Cells
 preceded by a &quot;|&quot; will be &lt;td&gt; and those preceded by &quot;^&quot; become &lt;th&gt;.</li>
@@ -26,6 +26,7 @@ preceded by a &quot;|&quot; will be &lt;td&gt; and those preceded by &quot;^&quo
   <li>To make a cell span several columns, simply place the corresponding number of dividers 
 after the cell.  Thus to make <tt>&lt;td colspan=&quot;3&quot;&gt;example&lt;/td&gt;</tt>, enter 
 <tt>| example |||</tt>.</li> 
+  <li>Note that the single space between the separator character and the text is optional.</li>
   <li>If the first cell of a row begins with an asterisk (&quot;*&quot;), this will be stripped, but
 rows marked in this way are subheadings, and when the range of rows being displayed begins between two
 subheadings, the last subheading will be displayed even though all aother previous rows have been 

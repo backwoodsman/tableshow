@@ -6,7 +6,7 @@ purposes. Additionally, lines can be selected for display based on the
 values in particular cells.  This allows, for example, the discarding of 
 already passed dates. 
 
-USAGE: {tableshow block="{bn}"|page="{pn}" [start="{s-crit}"] [end="{e-crit}"]}
+USAGE: {tableshow [block="{bn}"|page="{pn}"] [start="{s-crit}"] [end="{e-crit}"] [dateformat="{df}"]}
 
 where
   {bn} or {pn} is global content block name, or page alias where the 
@@ -21,11 +21,13 @@ where
 
   {e-crit} is the criterion for the end row, similarly.
 
+  {df} is a pipe-separated list of: a format string, and one or more column numbers.
+
 I have not implemented paging because inserting <thead> and <tfoot> 
 segments should result in the browser dealing with paging.  These can be 
 inserted directly into the source page or the three segments divided by
 lines beginning with three or more hyphens ('---').  The segments must be 
-in the order thead, tfoot, tbody.
+in the order thead, tbody, tfoot, and the tfoot may be omitted.
 
 Formatting of the table is controlled by css.
 
