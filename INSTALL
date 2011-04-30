@@ -1,0 +1,19 @@
+HOW TO INSTALL THE 'TABLESHOW' PLUGIN
+    
+    copy 
+        plugins/function.tableshow.php
+    to the corresponding place in your cmsms installation
+
+    Also append the contents of    
+            admin/lang/en_US/tableshow.inc.php 
+    to admin/lang/en_US/admin.inc.php
+    
+These help function files will be overwritten at any upgrade, so an 
+alternative strategy is to append them to 
+        admin/lang/en_US/local.inc.php
+(Create this file if it does not exist.)
+Then simply add 'include "local.inc.php";' at the end of admin.inc.php
+(but before the closing '?>' ).  You will need to redo this after any upgrade, but
+you can insert all your local includes in the one file so they are all re-activated 
+at once.
+
