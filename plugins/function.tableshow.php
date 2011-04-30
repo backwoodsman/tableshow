@@ -105,18 +105,20 @@ function smarty_cms_function_tableshow($params, &$smarty) {
 		if ($row != "") {
 			if (substr($row, 0, 3) == "---") {
 				if (!isset($thead)) {
-					$thead = $segment;
-					unset($segment);
-				} elseif (!isset($tfoot)) {
-					$tfoot = $segment;
-					unset($segment);
+					$thead = $tbody;
+					unset($tbody);
+				} else {
+					$make_foot = TRUE;
 				}
 			} else {
-				$segment[] = $row;
+				if ($make_foot) {
+					$tfoot[] = $row;
+				} else {
+					$tbody[] = $row;
+				}	
 			}
 		}
 	}
-	$tbody = $segment;
 
 	# parse thead
 	if (isset($thead)) {
@@ -227,16 +229,17 @@ function parse_row ($row, $datfmt) {
 					$content = substr($content,1);
 				}
 				$shorten = strlen($cell[2]) + $span ;
+				# Are we reformatting a date?
 				if ($datfmt[0] != "0") {
+					# If so, we need to keep leading and trailing space for alignment
 					preg_match("/^(\s*)([^ ]+)( *)$/", $content, $parts);
-					$aaa = $parts[1];
-					$zzz = $parts[3];
 					for ($i=1; $i<count($datfmt); $i++) {
 						if (($colno == $datfmt[$i]) && (strtotime($parts[2]) > 0)) {
 							$adate = strtotime($parts[2]);
 							/* NB: The above will parse dates with slash sparators as
-							wierd US-style m/d/Y.  Not correcting this to help US users.*/ 
-							$content = $aaa.date($datfmt[0], $adate).$zzz;
+								wierd US-style m/d/Y.  Not correcting this to help US users.*/ 
+							# now reassemble leading and trailing spaces
+							$content = $parts[1].date($datfmt[0], $adate).$parts[3];
 							break;
 						}
 					}
