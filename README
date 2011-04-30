@@ -1,10 +1,11 @@
-This plugin tag by richard <richard@the-place.net>.  It is intended to
-extract and display a table presented in a simple wiki-like markup in either 
-a page or a global block.  Each line is interpreted as a table row and can  
-have an optional '<br />' at the end to allow easy viewing for admin 
-purposes. Additionally, lines can be selected for display based on the 
-values in particular cells.  This allows, for example, the discarding of 
-already passed dates. 
+Plugin tag for CMSMadeSimple by richard <richard@the-place.net>.  It is
+intended to extract and display a table presented in a simple wiki-like markup
+in either a page or a global block.  Each line is interpreted as a table row
+and can  have an optional '<br />' at the end to allow easy viewing for admin
+purposes. Additionally, lines can be selected for display based on the values
+in particular cells.  This allows, for example, the discarding of table rows
+representing data for already passed dates, and the limiting of the distance
+into the future for which data is shown.
 
 USAGE: {tableshow [block="{bn}"|page="{pn}"] [start="{s-crit}"] [end="{e-crit}"] [dateformat="{df}"]}
 
