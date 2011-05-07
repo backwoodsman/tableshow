@@ -2,12 +2,15 @@ Plugin tag for CMSMadeSimple by richard <richard@the-place.net>.  It is
 intended to extract and display a table presented in a simple wiki-like markup
 in either a page or a global block.  Each line is interpreted as a table row
 and can  have an optional '<br />' at the end to allow easy viewing for admin
-purposes. Additionally, lines can be selected for display based on the values
+purposes, but the recommended method is to enclose the whole block in <pre></pre>
+tags.  Additionally, lines can be selected for display based on the values
 in particular cells.  This allows, for example, the discarding of table rows
 representing data for already passed dates, and the limiting of the distance
-into the future for which data is shown.
+into the future for which data is shown.  When a partial table is shown, the 
+relevant subheading can be preserved even if some rows after it are discarded.
 
-USAGE: {tableshow [block="{bn}"|page="{pn}"] [start="{s-crit}"] [end="{e-crit}"] [dateformat="{df}"]}
+USAGE: {tableshow [block="{bn}"|page="{pn}"] [start="{s-crit}"] 
+        [end="{e-crit}"] [dateformat="{df}"] [replace="{rs}"] }
 
 where
   {bn} or {pn} is global content block name, or page alias where the 
@@ -23,6 +26,11 @@ where
   {e-crit} is the criterion for the end row, similarly.
 
   {df} is a pipe-separated list of: a format string, and one or more column numbers.
+
+  {rs} one or more pairs of strings, eg replace="aa|bbb||cc|ddd", which will cause
+                   all instances of aa to be replaced by bbb and all instances of 
+				   cc by ddd.  Intended for use on local currency symbols (eg:
+				   "£|&pound;"), but can be used for arbitrary strings.
 
 I have not implemented paging because inserting <thead> and <tfoot> 
 segments should result in the browser dealing with paging.  These can be 

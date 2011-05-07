@@ -349,8 +349,9 @@ function smarty_cms_about_function_tableshow()
 {
 ?>
   <p>Author:  richard Lyons &lt;richard@the-place.net&gt; </p>
-  <p>Version 0.2</p>
+  <p>Version 0.3</p>
   <p>Change History<br />
+    0.3 - added facility to convert currency symbols to html macros.
     0.2 - various bugfixes and revised to accept source segments in natural<br />
     order, viz: thead, tbody, tfoot. <br />
     0.1.1 - beta release<br />
