@@ -41,9 +41,10 @@ usually better.</p>
 data table into it. Add &quot;&lt;pre&gt;&quot; in a line at the top of the data, and  
 &quot;&lt;/pre&gt;&quot; in a line at the bottom &ndash; this protects the table from reformatting 
 by wysiwyg editors if it is erroneously opened using one.  Save the block or page.</p> 
+
   <h4>displaying the table</h4>
   <p> On the page you want the table to show, insert<br />
-<code>{tableshow [block="{bn}"|page="{pn}"] [start="{s-crit}"] [end="{e-crit}"] [dateformat="{df}]}</code><br />
+<code>{tableshow [block="{bn}"|page="{pn}"] [start="{s-crit}"] [end="{e-crit}"] [dateformat="{df} [replace="{rs}]}]}</code><br />
 where: </p>
   <ul>
     <li><tt>{bn}</tt> - the global content block name, or </li>
@@ -59,7 +60,12 @@ where: </p>
 	</ul>
  </li>
 	<li><tt>{e-crit}</tt> - the criterion for the end row, similarly.</li>
-	<li><tt>{df}</tt> - should contain a strftime format string (Google 'strftime' if in doubt) and a list of column numbers to which the format should be applied, all separated by pipe symbols (&quot;|&quot;). An example: <tt>dateformat=&quot;d M Y|2|3|6&quot;</tt> would convert dates given in columns 2, 3 and 6 to format similar to &quot;14 Mar 2011&quot;. Many different date formats are accepted in the input data, but beware that if your input date is slash-separated, it will be interpreted at out-of-sequence American-style date (m/d/Y) so use hyphens if you mean d-m-Y.</li>
+	<li><tt>{df}</tt> - should contain a strftime format string (Google 'strftime' if in doubt) and a list of column numbers to which the format should be applied, all separated by pipe symbols (&quot;|&quot;). An example: <tt>dateformat=&quot;d M Y|2|3|6&quot;</tt> would convert dates given in columns 2, 3 and 6 to format similar to &quot;14 Mar 2011&quot;. Many different date formats are accepted in the input data, but beware that if your input date is slash-separated, it will be interpreted at out-of-sequence American-style date (m/d/Y) so use hyphens if you mean d-m-Y.<br />
+Note that using slashes may cause dates to mysteriously fail to reformat, because the day number, which may be greater than 12, is being read as a month number.</li>
+    <li><tt>{rs}</tt> - contains one or more pairs of strings separated by a "|".  The pairs need 
+to be separated by a double pipe "||".  All occurrences of the first string or each pair will be rplaced by the second.  
+This is intended to allow whatever local encoding is used for currency symbols to be replaced by the corresponding 
+html macro (eg: '&amp;pound;'), but it can be used to replace arbitrary strings.  Example <tt>replace=&quot;&euro;|&amp;euro;||&pound;|&amp;pound;&quot;</tt></li>
   </ul>
 <p>Only one of <tt>block</tt> or <tt>page</tt> can be used: the default is <code>page='table-data'</code>.</p>
 

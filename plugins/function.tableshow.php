@@ -28,7 +28,8 @@
 # dates.  If the first line to be displayed falls somewhere between two lines
 # marked as subheadings, the relevant previous subheading is also displayed.
 
-# USAGE: {tableshow block="{bn}"|page="{pn}" [start="{s-crit}"] [end="{e-crit}"] [dateformat="{df}"]}
+# USAGE: {tableshow block="{bn}"|page="{pn}" [start="{s-crit}"] [end="{e-crit}"] 
+#        [dateformat="{df}"] [replace="{rs}]}
 # 
 # where
 #   {bn} or {pn} is global content block name, or page alias where the 
@@ -44,8 +45,16 @@
 #   {e-crit} is the criterion for the end row, similarly.
 #
 #   {df} contains a date format followed by one or more column numbers, separated
-#   by pipe characters ("|"), for example "d M Y|2|3" will format dates in columns
-#   2 and 3 to be similar to '12 May 2011'.
+#                    by pipe characters ("|"), for example "d M Y|2|3" will 
+#                    format dates in columns 2 and 3 to be similar to '12 May 2011'.
+#
+#   {rs} contains one or more pairs of strings separated by a "|".  The pairs need 
+#                    to be separated by a double pipe "||".  All occurrences of the 
+#                    first string or each pair will be rplaced by the second.  
+#                    This is intended to allow whatever local encoding is used 
+#                    for currency symbols to be replaced by the corresponding 
+#                    html macro (eg: '&pound;'), but it can be used to replace 
+#                    arbitrary strings.
 
 # A <caption> may be included -- this is the html tag that produces a headline 
 # above the table -- by placing it in the <thead> segment and marking it with
@@ -53,7 +62,7 @@
 #
 # I have not implemented paging because inserting <thead> and <tfoot> 
 # segments should result in the browser dealing with paging.  These can be 
-# inserted directly into the source page or the three segments divided by
+# inserted directly into the source page or content block, with the three segments divided by
 # lines beginning with three or more hyphens ('---').  The segments must be 
 # in the order thead, tbody, tfoot. If only one line containing '---' is present
 # then the two parts will be interpreted as thead and tbody and if none are
@@ -66,6 +75,7 @@ function smarty_cms_function_tableshow($params, &$smarty) {
     global $gCms;
 
 	$display = "";
+	$toshow = array();
 	$table = array();
 	$cells = array();
 	$celltyprgx = "/[|^]/";
@@ -106,30 +116,42 @@ function smarty_cms_function_tableshow($params, &$smarty) {
 		$datfmt[0] = "0";
 	}
 
+	# set up currency symbol substitution if required
+	if ( isset($params['replace'])) {
+		$changes = explode('||', $params['replace']);
+	}
+ 
 	# form an array of the data
 	$table = explode("\n", $tabledata);
 	$rowcount = count($table);
 	# top and tail
 	$text .= $top;
-	$table = preg_replace( "/^ *<\/?pre> *$/", "", $table) ;
 
 	# break into segments (thead, tfoot, tbody)
 	foreach ($table as $row) {
 		$row = trim($row);
-		if ($row != "") {
-			if (substr($row, 0, 3) == "---") {
-				if (!isset($thead)) {
-					$thead = $tbody;
-					unset($tbody);
-				} else {
-					$make_foot = TRUE;
+		if ( ! preg_match( "/^ *<\/?pre> *$/", $row )) {
+			if ($row != "") {
+				if (isset($params['replace'])) {
+					foreach ($changes as $change) {
+					list($was, $shallbe) = explode('|', $change); 
+					$row = preg_replace( "/$was/", "$shallbe", $row);
+					}
 				}
-			} else {
-				if ($make_foot) {
-					$tfoot[] = $row;
+				if (substr($row, 0, 3) == "---") {
+					if (!isset($thead)) {
+						$thead = $tbody;
+						unset($tbody);
+					} else {
+						$make_foot = TRUE;
+					}
 				} else {
-					$tbody[] = $row;
-				}	
+					if ($make_foot) {
+						$tfoot[] = $row;
+					} else {
+						$tbody[] = $row;
+					}	
+				}
 			}
 		}
 	}
@@ -137,14 +159,16 @@ function smarty_cms_function_tableshow($params, &$smarty) {
 	# parse thead
 	if (isset($thead)) {
 		$text .= "\t\t<thead>\n";
-		$thead = preg_replace( "/^\s*\_([^_]+)\_\s*$/", '<caption>\1</caption>', $thead ); 
-		$text .= parse_segment($thead, 0, 0, -1, $datfmt);
+		$thead = preg_replace( "/_([^_]+)_/", '<caption>\1</caption>', $thead ); 
+		$toshow['first'] = 0;
+		$text .= parse_segment($thead, $toshow, $datfmt);
 		$text .= "\n\t\t</thead>\n";
 	}
 	# parse tfoot
 	if (isset($tfoot)) {
 		$text .= "\t\t<tfoot>\n";
-		$text .= parse_segment($tfoot, 0, 0, -1, $datfmt);
+		$toshow['first'] = 0;
+		$text .= parse_segment($tfoot, $toshow, $datfmt);
 		$text .= "\n\t\t</tfoot>\n";
 	}
 
@@ -159,47 +183,46 @@ function smarty_cms_function_tableshow($params, &$smarty) {
 		foreach ($tbody as $r=>$row) {
 			if (preg_match("$celltyprgx", substr($row,0,1))) {
 				if (preg_match("/^\*(.*)$/", substr($row,1,1))) {
-					$lastsubhd = $r;
+					$toshow['lastsubhd'] = $r;
 				}
 				$cells[$r] = preg_split("$celltyprgx", $row);
 				$chkcontent = trim($cells[$r][$scrit[1]]);
 				if (strlen($chkcontent)) {
 					if (check_match($chkcontent, $scrit[2], $scrit[3])) {
-						$first = $r;
+						$toshow['first'] = $r;
 						break;
 					}
 				}
 			}
 		}
 	} else {
-		$first = 0;
+		$toshow['first'] = 0;
 	}
 	# is the end defined?
 	if (isset($params['end'])) {
 		preg_match("$critrgx", $params['end'], $ecrit);
 		# so find the last row
-		for ($r=$first; $r < count($tbody); $r++) {
+		for ($r=$toshow['first']; $r < count($tbody); $r++) {
 			if (preg_match("$celltyprgx", substr($tbody[$r],0,1))) {
 				$cells[$r] = preg_split("$celltyprgx", $tbody[$r]);
 				if (strlen($cells[$r][$ecrit[1]])) {
 					if (check_match(trim($cells[$r][$ecrit[1]]), $ecrit[2], $ecrit[3])) {
-						$last = $r;
+						$toshow['last'] = $r;
 						break;
 					}
 				}
 			}
 		}
 	} else {
-		$last = count($tbody);
+		$toshow['last'] = count($tbody);
 	}
-
 	# parse tbody
 	$text .= "\t\t<tbody>\n";
-	if (!isset($first)) {
+	if (!isset($toshow['first'])) {
 		$span = count(preg_split("$celltyprgx", $table[0]));
 		$text .= "<tr><td span=\"$span\" align=\"centre\" class=\"warning\">no data in range<br />no start row found</td></tr>";
 	} else {
-		$text .= parse_segment($tbody, $first, $last, $lastsubhd, $datfmt);
+ 		$text .= parse_segment($tbody, $toshow, $datfmt);
 	}
 	$text .= "\n\t\t</tbody>\n";
 	
@@ -210,15 +233,15 @@ function smarty_cms_function_tableshow($params, &$smarty) {
 
 }
 
-function parse_segment($table, $first, $last, $lastsubhd, $datfmt) {
-	$text = "";
-	if ($last == 0) {
-		$last = count($table);
+function parse_segment($table, $toshow, $datfmt) {
+ 	$text = "";
+	if ($toshow['last'] == 0) {
+		$toshow['last'] = count($table);
 	}
-	if ($lastsubhd > -1 ) {
-		$text .= parse_row($table[$lastsubhd], $datfmt);
+	if ($toshow['lastsubhd'] > -1 ) {
+		$text .= parse_row($table[$toshow['lastsubhd']], $datfmt);
 	}
-	for ($r = $first; $r <= $last; $r++) {
+	for ($r = $toshow['first']; $r <= $toshow['last']; $r++) {
 		$row = $table[$r];
 		if (preg_match("/[|^]/", substr($row,0,1))) {
 		$text .= parse_row($row, $datfmt);
@@ -235,33 +258,33 @@ function parse_row ($row, $datfmt) {
 	$span = 0;
 	while (strlen($row) > 1 ) {
 		$colno = $colno + $span;
-			if (preg_match("/^([|^])([^|^]+)([|^]*)/", $row, $cell)){
-				$type = substr($row, 0, 1);
-				$span = strlen($cell[3]);
-				$content = $cell[2];
-				if (substr($content,0,1) == "*") {
-					$content = substr($content,1);
-				}
-				$shorten = strlen($cell[2]) + $span ;
-				# Are we reformatting a date?
-				if ($datfmt[0] != "0") {
-					# If so, we need to keep leading and trailing space for alignment
-					preg_match("/^(\s*)([^ ]+)( *)$/", $content, $parts);
-					for ($i=1; $i<count($datfmt); $i++) {
-						if (($colno == $datfmt[$i]) && (strtotime($parts[2]) > 0)) {
-							$adate = strtotime($parts[2]);
-							/* NB: The above will parse dates with slash sparators as
-								wierd US-style m/d/Y.  Not correcting this to help US users.*/ 
-							# now reassemble leading and trailing spaces
-							$content = $parts[1].date($datfmt[0], $adate).$parts[3];
-							break;
-						}
+		if (preg_match("/^([|^])([^|^]+)([|^]*)/", $row, $cell)){
+			$type = substr($row, 0, 1);
+			$span = strlen($cell[3]);
+			$content = $cell[2];
+			if (substr($content,0,1) == "*") {
+				$content = substr($content,1);
+			}
+			$shorten = strlen($cell[2]) + $span ;
+			# Are we reformatting a date?
+			if ($datfmt[0] != "0") {
+				# If so, we need to keep leading and trailing space for alignment
+				preg_match("/^(\s*)([^ ]+)( *)$/", $content, $parts);
+				for ($i=1; $i<count($datfmt); $i++) {
+					if (($colno == $datfmt[$i]) && (strtotime($parts[2]) > 0)) {
+						$adate = strtotime($parts[2]);
+						/* NB: The above will parse dates with slash sparators as
+							wierd US-style m/d/Y.  Not correcting this to help US users.*/ 
+						# now reassemble leading and trailing spaces
+						$content = $parts[1].date($datfmt[0], $adate).$parts[3];
+						break;
 					}
 				}
-				$text .= write_cell($type, $span, $content);
-				$row = substr($row, $shorten);
 			}
+			$text .= write_cell($type, $span, $content);
+			$row = substr($row, $shorten);
 		}
+	}
 		$text .= "\n\t\t</tr>";
 	return $text;
 }
